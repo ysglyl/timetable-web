@@ -1,40 +1,38 @@
-import React from 'react';
-import {Button, Table} from "antd";
+import React, {Fragment} from 'react';
+import {Button, message, Modal, Select, Table, Tag} from "antd";
 
 import TimeTable from '@/components/timetable';
-import {getSectionName} from "@/utils/tool";
+import {fixedList2MapList, getSectionName, getWeekDayName} from "@/utils/tool";
 
 import classNames from 'classnames';
-import styles from './teacherFixed.less'
+import styles from './spaceFixed.less'
+import {connect} from "dva";
 
 
-export default class TeacherFixed extends React.PureComponent {
+class SpaceFixed extends React.PureComponent {
 
     state = {
-        daysInWeek: 5,
-        sectionsInMorning: 1,
-        sectionsInForenoon: 4,
-        sectionsInNoon: 0,
-        sectionsInAfternoon: 3,
-        sectionsInEvening: 2,
-        spaceAllList: [
-            {rowId: '1', name: '物理实验室'},
-            {rowId: '2', name: '化学实验室'},
-            {rowId: '3', name: '生物实验室'},
-            {rowId: '4', name: '音乐教室'},
-            {rowId: '5', name: '计算机房'},
-            {rowId: '6', name: '操场'}
-        ],
+        selectedScheme: null,
         spaceSelected: null,
-        fixedMap: {},
+        fixedList: [new Map(), new Map(), new Map(), new Map()],
         flagFixedType: 1,
         refreshPage: false
-    };
+    }
+
+    componentDidMount() {
+        const {dispatch} = this.props;
+        dispatch({
+            type: 'scheme/schemeAllList'
+        });
+        dispatch({
+            type: 'baseData/spaceAllList'
+        });
+    }
 
     render() {
+        const {scheme: {schemeAllList}, baseData: {spaceAllList}} = this.props;
         const {
-            daysInWeek, sectionsInMorning, sectionsInForenoon, sectionsInNoon, sectionsInAfternoon, sectionsInEvening,
-            spaceAllList, flagFixedType, refreshPage
+            selectedScheme, flagFixedType, refreshPage
         } = this.state;
         return (
             <div>
@@ -44,32 +42,91 @@ export default class TeacherFixed extends React.PureComponent {
                     size={'small'}
                     pagination={false}
                     scroll={{y: 240}}
+                    title={() => (
+                        <Fragment>
+                            <Select
+                                style={{minWidth: 200}}
+                                placeholder={"请选择排课方案"}
+                                onChange={(value) => {
+                                    const {dispatch} = this.props;
+                                    dispatch({
+                                        type: "rule/spaceFixedAllList",
+                                        payload: {schemeId: value},
+                                        callback: res => {
+                                            if (res.code === 200) {
+                                                const list = fixedList2MapList(res.data.map(d => ({...d, ...d.space})));
+                                                this.setState({
+                                                    fixedList: list,
+                                                    selectedScheme: schemeAllList.find(d => d.rowId === value),
+                                                    refreshPage: !refreshPage
+                                                })
+                                            }
+                                        }
+                                    })
+                                }}
+                                options={schemeAllList.map(s => ({
+                                    value: s.rowId,
+                                    label: s.name
+                                }))} />
+                            <Button style={{marginLeft: 8}} disabled={!selectedScheme} onClick={() => {
+                                const {fixedList} = this.state;
+                                const saveList = new Array();
+                                fixedList.forEach((fixed, index) => {
+                                    fixed.forEach((v, k) => {
+                                        const indexes = k.split('_');
+                                        v.forEach(space => {
+                                            saveList.push({
+                                                schemeId: selectedScheme.rowId,
+                                                dayIndex: indexes[1],
+                                                sectionIndex: indexes[0],
+                                                spaceId: space.rowId,
+                                                fixedType: index + 1
+                                            })
+                                        })
+                                    })
+                                });
+                                const {dispatch} = this.props;
+                                dispatch({
+                                    type: 'rule/spaceFixedSaveBatch',
+                                    payload: {
+                                        schemeId: selectedScheme.rowId,
+                                        list: saveList
+                                    },
+                                    callback: (res) => {
+                                        if (res.code === 200) {
+                                            message.success("保存成功");
+                                        } else {
+                                            message.error("保存失败");
+                                        }
+                                    }
+                                });
+                            }}>保存</Button>
+                        </Fragment>
+                    )}
                     columns={[
-                        {title: "场地", dataIndex: "name"},
+                        {title: '场地', dataIndex: 'name'},
+                        {title: '可容纳班级数', dataIndex: 'volume'}
                     ]}
-                    dataSource={spaceAllList}
-                    defaultExpandAllRows
+                    dataSource={selectedScheme ? spaceAllList : []}
                     rowSelection={{
                         type: 'radio',
                         onChange: (selectedRowKeys, selectedRows) => {
-                            const {fixedMap} = this.state;
-                            if (fixedMap.get(selectedRows[0].rowId) == null) {
-                                fixedMap.set(selectedRows[0].rowId, new Array(4).fill(null).map(s => new Set()));
-                            }
                             this.setState({
                                 spaceSelected: selectedRows[0]
                             })
-                        }
+                        },
                     }}
                 />
+                {selectedScheme &&
                 <TimeTable
-                    rows={sectionsInMorning + sectionsInForenoon + sectionsInNoon + sectionsInAfternoon + sectionsInEvening + 1}
-                    columns={daysInWeek + 1}
-                    dividers={[sectionsInMorning, sectionsInMorning + sectionsInForenoon, sectionsInMorning + sectionsInForenoon + sectionsInNoon, sectionsInMorning + sectionsInForenoon + sectionsInNoon + sectionsInAfternoon]}
+                    rows={selectedScheme.sectionsInMorning + selectedScheme.sectionsInForenoon + selectedScheme.sectionsInNoon + selectedScheme.sectionsInAfternoon + selectedScheme.sectionsInEvening + 1}
+                    columns={selectedScheme.daysInWeek + 1}
+                    dividers={[selectedScheme.sectionsInMorning, selectedScheme.sectionsInMorning + selectedScheme.sectionsInForenoon, selectedScheme.sectionsInMorning + selectedScheme.sectionsInForenoon + selectedScheme.sectionsInNoon, selectedScheme.sectionsInMorning + selectedScheme.sectionsInForenoon + selectedScheme.sectionsInNoon + selectedScheme.sectionsInAfternoon]}
                     hoverableTableItem={(rowIndex, columnIndex) => {
                         if (rowIndex === 0 && columnIndex === 0) {
                             return true;
-                        } else if (rowIndex > 0 && columnIndex > 0) {
+                        }
+                        if (rowIndex > 0 && columnIndex > 0) {
                             return true;
                         }
                         return false;
@@ -81,19 +138,21 @@ export default class TeacherFixed extends React.PureComponent {
                             });
                         }
                         if (rowIndex > 0 && columnIndex > 0) {
-                            const {spaceSelected, flagFixedType, fixedMap} = this.state;
+                            const {spaceSelected, flagFixedType, fixedList} = this.state;
                             if (spaceSelected === null) {
                                 return;
                             }
-                            const fixedList = fixedMap.get(spaceSelected.rowId);
-                            if (fixedList == null) {
+                            const fixedMap = fixedList[flagFixedType - 1];
+                            let existList = fixedMap.get(`${rowIndex}_${columnIndex}`);
+                            if (existList == null) {
+                                existList = new Array();
+                            }
+                            if (existList.some(value => value.rowId === spaceSelected.rowId)) {
                                 return;
                             }
-                            if (fixedList[flagFixedType - 1].has(`${rowIndex}_${columnIndex}`)) {
-                                fixedList[flagFixedType - 1].delete(`${rowIndex}_${columnIndex}`);
-                            } else {
-                                fixedList[flagFixedType - 1].add(`${rowIndex}_${columnIndex}`);
-                            }
+                            existList.push({...spaceSelected});
+                            fixedMap.set(`${rowIndex}_${columnIndex}`, existList);
+                            fixedList[flagFixedType - 1] = fixedMap;
                             this.setState({
                                 refreshPage: !refreshPage,
                             });
@@ -117,41 +176,68 @@ export default class TeacherFixed extends React.PureComponent {
                                     break;
                             }
                         } else if (rowIndex > 0 && columnIndex === 0) {
-                            return getSectionName(rowIndex - 1, sectionsInMorning, sectionsInForenoon, sectionsInNoon, sectionsInAfternoon, sectionsInEvening);
+                            return getSectionName(rowIndex - 1, selectedScheme.sectionsInMorning, selectedScheme.sectionsInForenoon, selectedScheme.sectionsInNoon, selectedScheme.sectionsInAfternoon, selectedScheme.sectionsInEvening);
                         } else if (rowIndex > 0 && columnIndex > 0) {
-                            const {fixedMap, spaceSelected} = this.state;
-                            if (spaceSelected == null) {
-                                return null;
-                            }
-                            const fixedList = fixedMap.get(spaceSelected.rowId);
-                            if (fixedList != null) {
-                                if (fixedList[flagFixedType - 1].has(`${rowIndex}_${columnIndex}`)) {
-                                    switch (flagFixedType) {
-                                        case 1:
-                                            return <div
-                                                className={classNames(styles.fixedTypeContainer, styles.fixed)}>固排</div>;
-                                        case 2:
-                                            return <div
-                                                className={classNames(styles.fixedTypeContainer, styles.suggest)}>建议</div>;
-                                        case 3:
-                                            return <div
-                                                className={classNames(styles.fixedTypeContainer, styles.oppose)}>反对</div>;
-                                        case 4:
-                                            return <div
-                                                className={classNames(styles.fixedTypeContainer, styles.ban)}>禁止</div>;
-                                        default:
-                                            break;
-                                    }
+                            const {fixedList} = this.state;
+                            const fixed = fixedList[flagFixedType - 1].get(`${rowIndex}_${columnIndex}`);
+                            if (fixed != null && fixed.length > 0) {
+                                if (fixed.length === 1) {
+                                    const f = fixed[0];
+                                    return (
+                                        <Tag key={`tag_${rowIndex}_${columnIndex}_${f.rowId}`}
+                                             color={["green", 'lime', 'gold', 'red'][flagFixedType - 1]} closable
+                                             onClose={() => {
+                                                 const fixed = fixedList[flagFixedType - 1].get(`${rowIndex}_${columnIndex}`);
+                                                 if (fixed != null) {
+                                                     fixedList[flagFixedType - 1].set(`${rowIndex}_${columnIndex}`, fixed.filter(ff => ff.rowId !== f.rowId));
+                                                 }
+                                                 this.setState({
+                                                     refreshPage: !refreshPage
+                                                 });
+                                             }}>{f.name}</Tag>
+                                    )
+                                } else {
+                                    return (
+                                        <Tag key={`tag_${rowIndex}_${columnIndex}_0`}
+                                             color={["green", 'lime', 'gold', 'red'][flagFixedType - 1]}
+                                             onClick={() => {
+                                                 const $this = this;
+                                                 Modal.info({
+                                                     title: `${getWeekDayName(columnIndex - 1)}${getSectionName(rowIndex - 1, selectedScheme.sectionsInMorning, selectedScheme.sectionsInForenoon, selectedScheme.sectionsInNoon, selectedScheme.sectionsInAfternoon, selectedScheme.sectionsInEvening)}`,
+                                                     okText: "确定",
+                                                     content: (
+                                                         <Fragment>
+                                                             {
+                                                                 fixed.map(f => (
+                                                                     <Tag key={`modal_tag_${f.rowId}`}
+                                                                          color={["green", 'lime', 'gold', 'red'][flagFixedType - 1]}
+                                                                          closable
+                                                                          onClose={() => {
+                                                                              const {fixedList} = $this.state;
+                                                                              const fixed = fixedList[flagFixedType - 1].get(`${rowIndex}_${columnIndex}`);
+                                                                              if (fixed != null) {
+                                                                                  fixedList[flagFixedType - 1].set(`${rowIndex}_${columnIndex}`, fixed.filter(ff => ff.rowId !== f.rowId));
+                                                                              }
+                                                                              $this.setState({
+                                                                                  refreshPage: !$this.state.refreshPage,
+                                                                              });
+                                                                          }}>{f.name}</Tag>
+                                                                 ))
+                                                             }
+                                                         </Fragment>
+                                                     )
+                                                 })
+                                             }}>{`共${fixed.length}场地`}</Tag>
+                                    )
                                 }
                             }
                         }
                     }}
-                />
-                <Button onClick={() => {
-                    console.log(this.state.fixedMap)
-                }}>保存</Button>
+                />}
             </div>
         );
     }
 
 }
+
+export default connect(({scheme, rule, baseData}) => ({scheme, rule, baseData}))(SpaceFixed)

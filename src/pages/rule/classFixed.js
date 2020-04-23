@@ -1,43 +1,35 @@
 import React, {Fragment} from 'react';
-import {Button, Modal, Table, Tag} from "antd";
+import {Button, message, Modal, Select, Table, Tag} from "antd";
 
 import TimeTable from '@/components/timetable';
-import {getSectionName, getWeekDayName} from "@/utils/tool";
+import {fixedList2MapList, getSectionName, getWeekDayName} from "@/utils/tool";
 
 import classNames from 'classnames';
 import styles from './classFixed.less'
+import {connect} from "dva";
 
 
-export default class ClassFixed extends React.PureComponent {
+class ClassFixed extends React.PureComponent {
 
     state = {
-        daysInWeek: 5,
-        sectionsInMorning: 1,
-        sectionsInForenoon: 4,
-        sectionsInNoon: 0,
-        sectionsInAfternoon: 3,
-        sectionsInEvening: 2,
-        subjectAllList: [
-            {rowId: '1', subject: '语文', sectionCount: 5, alternative: 0, continuous: 0},
-            {rowId: '11', subject: '语文', sectionCount: 1, alternative: 0, continuous: 1},
-            {rowId: "2", subject: '数学', sectionCount: 5, alternative: 0, continuous: 0},
-            {rowId: "3", subject: '外语', sectionCount: 5, alternative: 0, continuous: 0},
-            {rowId: "4", subject: '物理', sectionCount: 2, alternative: 0, continuous: 0},
-            {rowId: "5", subject: '化学', sectionCount: 2, alternative: 0, continuous: 0},
-            {rowId: "6", subject: '生物', sectionCount: 2, alternative: 0, continuous: 0},
-            {rowId: "7", subject: '历史', sectionCount: 2, alternative: 0, continuous: 0},
-            {rowId: "8", subject: '政治', sectionCount: 2, alternative: 0, continuous: 0},
-        ],
+        selectedScheme: null,
         subjectSelected: null,
         fixedList: [new Map(), new Map(), new Map(), new Map()],
         flagFixedType: 1,
         refreshPage: false
     }
 
+    componentDidMount() {
+        const {dispatch} = this.props;
+        dispatch({
+            type: 'scheme/schemeAllList'
+        });
+    }
+
     render() {
+        const {scheme: {settingAllList, schemeAllList},} = this.props;
         const {
-            daysInWeek, sectionsInMorning, sectionsInForenoon, sectionsInNoon, sectionsInAfternoon, sectionsInEvening,
-            subjectAllList, flagFixedType, refreshPage
+            selectedScheme, flagFixedType, refreshPage
         } = this.state;
         return (
             <div>
@@ -47,15 +39,96 @@ export default class ClassFixed extends React.PureComponent {
                     size={'small'}
                     pagination={false}
                     scroll={{y: 240}}
+                    title={() => (
+                        <Fragment>
+                            <Select
+                                style={{minWidth: 200}}
+                                placeholder={"请选择排课方案"}
+                                onChange={(value) => {
+                                    const {dispatch} = this.props;
+                                    dispatch({
+                                        type: 'scheme/settingAllList',
+                                        payload: {schemeId: value}
+                                    });
+                                    dispatch({
+                                        type: "rule/classFixedAllList",
+                                        payload: {schemeId: value},
+                                        callback: res => {
+                                            if (res.code === 200) {
+                                                const list = fixedList2MapList(res.data);
+                                                this.setState({
+                                                    fixedList: list,
+                                                    selectedScheme: schemeAllList.find(d => d.rowId === value),
+                                                    refreshPage: !refreshPage
+                                                })
+                                            }
+                                        }
+                                    })
+                                }}
+                                options={schemeAllList.map(s => ({
+                                    value: s.rowId,
+                                    label: s.name
+                                }))} />
+                            <Button style={{marginLeft: 8}} disabled={!selectedScheme} onClick={() => {
+                                const {fixedList} = this.state;
+                                const saveList = new Array();
+                                fixedList.forEach((fixed, index) => {
+                                    fixed.forEach((v, k) => {
+                                        const indexes = k.split('_');
+                                        v.forEach(setting => {
+                                            saveList.push({
+                                                schemeId: selectedScheme.rowId,
+                                                dayIndex: indexes[1],
+                                                sectionIndex: indexes[0],
+                                                classId: setting.classId,
+                                                subjectId: setting.subjectId,
+                                                fixedType: index + 1
+                                            })
+                                        })
+                                    })
+                                });
+                                const {dispatch} = this.props;
+                                dispatch({
+                                    type: 'rule/classFixedSaveBatch',
+                                    payload: {
+                                        schemeId: selectedScheme.rowId,
+                                        list: saveList
+                                    },
+                                    callback: (res) => {
+                                        if (res.code === 200) {
+                                            message.success("保存成功");
+                                        } else {
+                                            message.error("保存失败");
+                                        }
+                                    }
+                                });
+                            }}>保存</Button>
+                        </Fragment>
+                    )}
                     columns={[
-                        {title: "科目", dataIndex: "subject"},
-                        {title: "教师", dataIndex: "teacher"},
-                        {title: "是否连堂", dataIndex: "continuous"},
-                        {title: "单双周", dataIndex: "alternative"},
-                        {title: "节数", dataIndex: "sectionCount"},
-                        {title: "场地", dataIndex: "space"}
+                        {title: '年级', dataIndex: ['classModel', 'grade', 'name']},
+                        {title: '班级', dataIndex: ['classModel', 'name']},
+                        {title: '科目', dataIndex: ['subject', 'name']},
+                        {title: '教师', dataIndex: ['teacher', 'name']},
+                        {title: '课节数', dataIndex: 'sectionCount'},
+                        {title: '连堂次数', dataIndex: 'continuousCount'},
+                        {title: '互斥组', dataIndex: 'dailyExclusiveGroup'},
+                        {
+                            title: '单双周', dataIndex: 'alternative', render: (val) => {
+                                switch (val) {
+                                    case 1:
+                                        return '单周';
+                                    case 2:
+                                        return "双周";
+                                    default:
+                                        return "不限";
+                                }
+                            }
+                        },
+                        {title: '匹配组', dataIndex: 'matchGroup'},
+                        {title: '教学场地', dataIndex: ['space', 'name']}
                     ]}
-                    dataSource={subjectAllList}
+                    dataSource={selectedScheme ? settingAllList : []}
                     rowSelection={{
                         type: 'radio',
                         onChange: (selectedRowKeys, selectedRows) => {
@@ -65,10 +138,11 @@ export default class ClassFixed extends React.PureComponent {
                         },
                     }}
                 />
+                {selectedScheme &&
                 <TimeTable
-                    rows={sectionsInMorning + sectionsInForenoon + sectionsInNoon + sectionsInAfternoon + sectionsInEvening + 1}
-                    columns={daysInWeek + 1}
-                    dividers={[sectionsInMorning, sectionsInMorning + sectionsInForenoon, sectionsInMorning + sectionsInForenoon + sectionsInNoon, sectionsInMorning + sectionsInForenoon + sectionsInNoon + sectionsInAfternoon]}
+                    rows={selectedScheme.sectionsInMorning + selectedScheme.sectionsInForenoon + selectedScheme.sectionsInNoon + selectedScheme.sectionsInAfternoon + selectedScheme.sectionsInEvening + 1}
+                    columns={selectedScheme.daysInWeek + 1}
+                    dividers={[selectedScheme.sectionsInMorning, selectedScheme.sectionsInMorning + selectedScheme.sectionsInForenoon, selectedScheme.sectionsInMorning + selectedScheme.sectionsInForenoon + selectedScheme.sectionsInNoon, selectedScheme.sectionsInMorning + selectedScheme.sectionsInForenoon + selectedScheme.sectionsInNoon + selectedScheme.sectionsInAfternoon]}
                     hoverableTableItem={(rowIndex, columnIndex) => {
                         if (rowIndex === 0 && columnIndex === 0) {
                             return true;
@@ -123,7 +197,7 @@ export default class ClassFixed extends React.PureComponent {
                                     break;
                             }
                         } else if (rowIndex > 0 && columnIndex === 0) {
-                            return getSectionName(rowIndex - 1, sectionsInMorning, sectionsInForenoon, sectionsInNoon, sectionsInAfternoon, sectionsInEvening);
+                            return getSectionName(rowIndex - 1, selectedScheme.sectionsInMorning, selectedScheme.sectionsInForenoon, selectedScheme.sectionsInNoon, selectedScheme.sectionsInAfternoon, selectedScheme.sectionsInEvening);
                         } else if (rowIndex > 0 && columnIndex > 0) {
                             const {fixedList} = this.state;
                             const fixed = fixedList[flagFixedType - 1].get(`${rowIndex}_${columnIndex}`);
@@ -134,10 +208,14 @@ export default class ClassFixed extends React.PureComponent {
                                         <Tag key={`tag_${rowIndex}_${columnIndex}_${f.rowId}`}
                                              color={["green", 'lime', 'gold', 'red'][flagFixedType - 1]} closable
                                              onClose={() => {
+                                                 const fixed = fixedList[flagFixedType - 1].get(`${rowIndex}_${columnIndex}`);
+                                                 if (fixed != null) {
+                                                     fixedList[flagFixedType - 1].set(`${rowIndex}_${columnIndex}`, fixed.filter(ff => ff.rowId !== f.rowId));
+                                                 }
                                                  this.setState({
                                                      refreshPage: !refreshPage
                                                  });
-                                             }}>{f.subject}</Tag>
+                                             }}>{`${f.classModel.grade.name}${f.classModel.name}${f.subject.name}`}</Tag>
                                     )
                                 } else {
                                     return (
@@ -146,7 +224,8 @@ export default class ClassFixed extends React.PureComponent {
                                              onClick={() => {
                                                  const $this = this;
                                                  Modal.info({
-                                                     title: `${getWeekDayName(columnIndex - 1)}${getSectionName(rowIndex - 1, sectionsInMorning, sectionsInForenoon, sectionsInNoon, sectionsInAfternoon, sectionsInEvening)}`,
+                                                     title: `${getWeekDayName(columnIndex - 1)}${getSectionName(rowIndex - 1, selectedScheme.sectionsInMorning, selectedScheme.sectionsInForenoon, selectedScheme.sectionsInNoon, selectedScheme.sectionsInAfternoon, selectedScheme.sectionsInEvening)}`,
+                                                     okText: "确定",
                                                      content: (
                                                          <Fragment>
                                                              {
@@ -163,7 +242,7 @@ export default class ClassFixed extends React.PureComponent {
                                                                               $this.setState({
                                                                                   refreshPage: !$this.state.refreshPage,
                                                                               });
-                                                                          }}>{f.subject}</Tag>
+                                                                          }}>{`${f.classModel.grade.name}${f.classModel.name}${f.subject.name}`}</Tag>
                                                                  ))
                                                              }
                                                          </Fragment>
@@ -175,12 +254,11 @@ export default class ClassFixed extends React.PureComponent {
                             }
                         }
                     }}
-                />
-                <Button onClick={() => {
-                    console.log(this.state.fixedList)
-                }}>保存</Button>
+                />}
             </div>
         );
     }
 
 }
+
+export default connect(({scheme, rule}) => ({scheme, rule}))(ClassFixed)

@@ -17,6 +17,7 @@ export default defineConfig({
         {path: '/scheme/setting', component: "@/pages/scheme/setting", exact: true, title: "排课设置"},
         {path: '/data/subject', component: "@/pages/data/subject", exact: true, title: "科目信息"},
         {path: '/data/teacher', component: "@/pages/data/teacher", exact: true, title: "教师信息"},
+        {path: '/data/grade', component: "@/pages/data/grade", exact: true, title: "年级信息"},
         {path: '/data/class', component: "@/pages/data/class", exact: true, title: "班级信息"},
         {path: '/data/space', component: "@/pages/data/space", exact: true, title: "场地信息"},
         {path: '/rule/section', component: "@/pages/rule/section", exact: true, title: "课节设置"},
@@ -25,8 +26,8 @@ export default defineConfig({
         {path: '/rule/teacherFixed', component: "@/pages/rule/teacherFixed", exact: true, title: "教师固排禁排"},
         {path: '/rule/subjectFixed', component: "@/pages/rule/subjectFixed", exact: true, title: "科目固排禁排"},
         {path: '/rule/spaceFixed', component: "@/pages/rule/spaceFixed", exact: true, title: "场地固排禁排"},
-        {path: '/rule/teacher', component: "@/pages/rule/teacher", exact: true, title: "教师特殊要求"},
-        {path: '/rule/subject', component: "@/pages/rule/subject", exact: true, title: "科目特殊要求"},
+        {path: '/rule/teacherSpecial', component: "@/pages/rule/teacher", exact: true, title: "教师特殊要求"},
+        {path: '/rule/subjectSpecial', component: "@/pages/rule/subject", exact: true, title: "科目特殊要求"},
         {path: '/schedule/schedule', component: "@/pages/schedule/schedule", exact: true, title: "智能排课"},
         {path: '/schedule/timetable', component: "@/pages/schedule/timetable", exact: true, title: "智能课表"},
       ]

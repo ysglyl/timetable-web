@@ -1,109 +1,168 @@
 import React from 'react';
-import {Button, Modal, Table} from 'antd';
+import {connect} from 'dva';
 
-export default class Scheme extends React.PureComponent {
+import {Button, Form, Input, InputNumber, Modal, Table} from 'antd';
 
-  state = {
-    addModalVisible: false
-  }
+import styles from './scheme.less'
 
-  clickAdd = () => {
-    this.setState({
-      addModalVisible: true
-    });
-  }
+class Scheme extends React.PureComponent {
 
-  handleAddOk = () => {
-    this.setState({
-      addModalVisible: false
-    });
-  }
+    state = {
+        selectedKeys: [],
+        addModalVisible: false,
+        addForm: null
+    }
 
-  render() {
-    return (
-      <div>
-        <Table
-          size="small"
-          rowKey={'rowId'}
-          columns={[
-            {title: '方案名称', dataIndex: 'name'},
-            {title: '每周天数', dataIndex: 'daysInWeek'},
-            {
-              title: '每天节数', children: [
-                {title: '早读', dataIndex: 'sectionsInMorning'},
-                {title: '上午', dataIndex: 'sectionsInForenoon'},
-                {title: '中午', dataIndex: 'sectionsInNoon'},
-                {title: '下午', dataIndex: 'sectionsInAfternoon'},
-                {title: '晚自习', dataIndex: 'sectionsInEvening'},
-              ]
-            },
-            {
-              title: '操作', render: (value, row) => (
-                <Button type={'link'}>修改</Button>
-              )
-            }
-          ]}
-          dataSource={[
-            {
-              rowId: 1,
-              name: '2019-2020学年第二学期课表',
-              daysInWeek: 5,
-              sectionsInMorning: 0,
-              sectionsInForenoon: 4,
-              sectionsInNoon: 0,
-              sectionsInAfternoon: 3,
-              sectionsInEvening: 0
-            },
-            {
-              rowId: 1,
-              name: '2020-2021学年第一学期课表',
-              daysInWeek: 5,
-              sectionsInMorning: 0,
-              sectionsInForenoon: 4,
-              sectionsInNoon: 0,
-              sectionsInAfternoon: 3,
-              sectionsInEvening: 0
-            },
-            {
-              rowId: 1,
-              name: '2020-2021学年第二学期课表',
-              daysInWeek: 5,
-              sectionsInMorning: 0,
-              sectionsInForenoon: 4,
-              sectionsInNoon: 0,
-              sectionsInAfternoon: 3,
-              sectionsInEvening: 0
-            }
-          ]}
-          bordered
-          title={() => (
+    componentDidMount() {
+        const {dispatch} = this.props;
+        dispatch({
+            type: 'scheme/schemeAllList'
+        })
+    }
+
+    render() {
+        const {scheme: {schemeAllList}} = this.props;
+        const {selectedKeys} = this.state;
+        return (
             <div>
-              <Button onClick={this.clickAdd}>新增</Button>
+                <Table
+                    size="small"
+                    rowKey={'rowId'}
+                    pagination={false}
+                    bordered
+                    title={() => (
+                        <div>
+                            <Button onClick={() => this.setState({
+                                addModalVisible: true
+                            })}>新增</Button>
+                            {selectedKeys.length > 0 &&
+                            <Button type={'danger'} style={{marginLeft: 8}} onClick={() => {
+                                const {dispatch} = this.props;
+                                dispatch({
+                                    type: 'scheme/schemeDeleteBatch',
+                                    payload: selectedKeys,
+                                    callback: () => {
+                                        this.setState({
+                                            selectedKeys: []
+                                        });
+                                        dispatch({
+                                            type: 'scheme/schemeAllList'
+                                        })
+                                    }
+                                })
+                            }}>批量删除</Button>}
+                        </div>
+                    )}
+                    columns={[
+                        {title: '方案名称', dataIndex: 'name'},
+                        {title: '每周天数', dataIndex: 'daysInWeek'},
+                        {
+                            title: '每天节数', children: [
+                                {title: '早读', dataIndex: 'sectionsInMorning'},
+                                {title: '上午', dataIndex: 'sectionsInForenoon'},
+                                {title: '中午', dataIndex: 'sectionsInNoon'},
+                                {title: '下午', dataIndex: 'sectionsInAfternoon'},
+                                {title: '晚自习', dataIndex: 'sectionsInEvening'},
+                            ]
+                        }
+                    ]}
+                    dataSource={schemeAllList}
+                    rowSelection={{
+                        onChange: (selectedKeys) => {
+                            this.setState({
+                                selectedKeys
+                            })
+                        }
+                    }}
+                />
+                <Modal
+                    visible={this.state.addModalVisible}
+                    title="基本信息"
+                    cancelText={"取消"}
+                    onCancel={() => {
+                        this.setState({
+                            addModalVisible: false
+                        });
+                    }}
+                    okText={"确定"}
+                    onOk={() => {
+                        this.state.addForm.validateFields().then((values) => {
+                            const {dispatch} = this.props;
+                            dispatch({
+                                type: "scheme/schemeSave",
+                                payload: values,
+                                callback: res => {
+                                    if (res.code === 200) {
+                                        this.setState({
+                                            addModalVisible: false
+                                        });
+                                        dispatch({
+                                            type: "scheme/schemeAllList"
+                                        })
+                                    }
+                                }
+                            })
+                        });
+                    }}
+                >
+                    <Form ref={(form) => {
+                        this.setState({
+                            addForm: form
+                        })
+                    }} initialValues={{
+                        daysInWeek: 5,
+                        sectionsInMorning: 0,
+                        sectionsInForenoon: 4,
+                        sectionsInNoon: 0,
+                        sectionsInAfternoon: 3,
+                        sectionsInEvening: 0
+                    }} labelCol={{span: 8}} wrapperCol={{span: 12}}>
+                        <Form.Item name={'name'} label={'方案名称'}>
+                            <Input placeholder={"请输入方案名称"}
+                                   rules={[{required: true, message: '请输入方案名称'}]} />
+                        </Form.Item>
+                        <Form.Item label={"每周"}>
+                            <Form.Item name={"daysInWeek"} noStyle>
+                                <InputNumber min={1} />
+                            </Form.Item>
+                            <span className={styles.suffix}>天</span>
+                        </Form.Item>
+                        <Form.Item label={"早读"}>
+                            <Form.Item name={"sectionsInMorning"} noStyle>
+                                <InputNumber min={0} />
+                            </Form.Item>
+                            <span className={styles.suffix}>节</span>
+                        </Form.Item>
+                        <Form.Item label={"上午"}>
+                            <Form.Item name={"sectionsInForenoon"} noStyle>
+                                <InputNumber min={0} />
+                            </Form.Item>
+                            <span className={styles.suffix}>节</span>
+                        </Form.Item>
+                        <Form.Item label={"中午"}>
+                            <Form.Item name={"sectionsInNoon"} noStyle>
+                                <InputNumber min={0} />
+                            </Form.Item>
+                            <span className={styles.suffix}>节</span>
+                        </Form.Item>
+                        <Form.Item label={"下午"}>
+                            <Form.Item name={"sectionsInAfternoon"} noStyle>
+                                <InputNumber min={0} />
+                            </Form.Item>
+                            <span className={styles.suffix}>节</span>
+                        </Form.Item>
+                        <Form.Item label={"晚自习"}>
+                            <Form.Item name={"sectionsInEvening"} noStyle>
+                                <InputNumber min={0} />
+                            </Form.Item>
+                            <span className={styles.suffix}>节</span>
+                        </Form.Item>
+                    </Form>
+                </Modal>
             </div>
-          )}
-        />
-        <Modal
-          visible={this.state.addModalVisible}
-          onCancel={() => {
-            this.setState({
-              addModalVisible: false
-            });
-          }}
-          title="基本信息"
-          footer={[
-            <Button key="submit" type="primary" onClick={this.handleAddOk}>
-              Submit
-            </Button>,
-          ]}
-        >
-          <p>Some contents...</p>
-          <p>Some contents...</p>
-          <p>Some contents...</p>
-          <p>Some contents...</p>
-          <p>Some contents...</p>
-        </Modal>
-      </div>
-    );
-  }
+        );
+    }
 
 }
+
+export default connect(({scheme}) => ({scheme}))(Scheme)

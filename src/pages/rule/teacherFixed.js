@@ -1,44 +1,41 @@
-import React from 'react';
-import {Button, Table} from "antd";
+import React, {Fragment} from 'react';
+import {Button, message, Modal, Select, Table, Tag} from "antd";
 
 import TimeTable from '@/components/timetable';
-import {getSectionName} from "@/utils/tool";
+import {fixedList2MapList, getSectionName, getWeekDayName} from "@/utils/tool";
 
 import classNames from 'classnames';
 import styles from './teacherFixed.less'
+import {connect} from "dva";
 
 
-export default class TeacherFixed extends React.PureComponent {
+class TeacherFixed extends React.PureComponent {
 
     state = {
-        daysInWeek: 5,
-        sectionsInMorning: 1,
-        sectionsInForenoon: 4,
-        sectionsInNoon: 0,
-        sectionsInAfternoon: 3,
-        sectionsInEvening: 2,
-        teacherAllList: [
-            {
-                rowId: '1', name: '语文组', children: [
-                    {rowId: '11', name: '张三',},
-                    {rowId: '12', name: '李四'}]
-            },
-            {
-                rowId: '2', name: '数学组', children: [
-                    {rowId: '21', name: '王五',},
-                    {rowId: '22', name: '赵六'}]
-            },
-        ],
-        teacherSelected: null,
-        fixedMap: {},
+        selectedScheme: null,
+        teachersSelected: [],
+        fixedList: [new Map(), new Map(), new Map(), new Map()],
         flagFixedType: 1,
         refreshPage: false
-    };
+    }
+
+    componentDidMount() {
+        const {dispatch} = this.props;
+        dispatch({
+            type: 'scheme/schemeAllList'
+        });
+        dispatch({
+            type: 'baseData/teacherGroupAllList'
+        });
+        dispatch({
+            type: 'baseData/teacherAllList'
+        });
+    }
 
     render() {
+        const {scheme: {schemeAllList}, baseData: {teacherGroupAllList, teacherAllList}} = this.props;
         const {
-            daysInWeek, sectionsInMorning, sectionsInForenoon, sectionsInNoon, sectionsInAfternoon, sectionsInEvening,
-            teacherAllList, flagFixedType, refreshPage
+            selectedScheme, flagFixedType, refreshPage
         } = this.state;
         return (
             <div>
@@ -48,32 +45,111 @@ export default class TeacherFixed extends React.PureComponent {
                     size={'small'}
                     pagination={false}
                     scroll={{y: 240}}
+                    title={() => (
+                        <Fragment>
+                            <Select
+                                style={{minWidth: 200}}
+                                placeholder={"请选择排课方案"}
+                                onChange={(value) => {
+                                    const {dispatch} = this.props;
+                                    dispatch({
+                                        type: "rule/teacherFixedAllList",
+                                        payload: {schemeId: value},
+                                        callback: res => {
+                                            if (res.code === 200) {
+                                                const list = fixedList2MapList(res.data.map(d => ({
+                                                    ...d,
+                                                    rowId: d.teacher.rowId,
+                                                    name: d.teacher.name
+                                                })));
+                                                this.setState({
+                                                    fixedList: list,
+                                                    selectedScheme: schemeAllList.find(d => d.rowId === value),
+                                                    refreshPage: !refreshPage
+                                                })
+                                            }
+                                        }
+                                    })
+                                }}
+                                options={schemeAllList.map(s => ({
+                                    value: s.rowId,
+                                    label: s.name
+                                }))} />
+                            <Button style={{marginLeft: 8}} disabled={!selectedScheme} onClick={() => {
+                                const {fixedList} = this.state;
+                                const saveList = new Array();
+                                fixedList.forEach((fixed, index) => {
+                                    fixed.forEach((v, k) => {
+                                        const indexes = k.split('_');
+                                        v.forEach(teacher => {
+                                            saveList.push({
+                                                schemeId: selectedScheme.rowId,
+                                                dayIndex: indexes[1],
+                                                sectionIndex: indexes[0],
+                                                teacherId: teacher.rowId,
+                                                fixedType: index + 1
+                                            })
+                                        })
+                                    })
+                                });
+                                const {dispatch} = this.props;
+                                dispatch({
+                                    type: 'rule/teacherFixedSaveBatch',
+                                    payload: {
+                                        schemeId: selectedScheme.rowId,
+                                        list: saveList
+                                    },
+                                    callback: (res) => {
+                                        if (res.code === 200) {
+                                            message.success("保存成功");
+                                        } else {
+                                            message.error("保存失败");
+                                        }
+                                    }
+                                });
+                            }}>保存</Button>
+                        </Fragment>
+                    )}
+                    childrenColumnName={'teachers'}
+                    indentSize={25}
                     columns={[
-                        {title: "教师/教师组", dataIndex: "name"},
+                        {title: '教师/教师组名称', dataIndex: 'name'},
+                        {title: '教师简称', dataIndex: 'shortName'}
                     ]}
-                    dataSource={teacherAllList}
-                    defaultExpandAllRows
+                    dataSource={teacherGroupAllList.concat(teacherAllList.map(t => ({
+                        ...t,
+                        rowId: `${t.rowId}_`,
+                        canSelect: true
+                    })))}
                     rowSelection={{
                         type: 'radio',
                         onChange: (selectedRowKeys, selectedRows) => {
-                            const {fixedMap} = this.state;
-                            if (fixedMap.get(selectedRows[0].rowId) == null) {
-                                fixedMap.set(selectedRows[0].rowId, new Array(4).fill(null).map(s => new Set()));
+                            const rowId = selectedRowKeys[0];
+                            if (rowId.endsWith("_")) {
+                                this.setState({
+                                    teachersSelected: selectedRows.map(r => ({...r, rowId: r.rowId.replace("_", "")}))
+                                })
+                            } else {
+                                this.setState({
+                                    teachersSelected: selectedRows[0].teachers
+                                })
                             }
-                            this.setState({
-                                teacherSelected: selectedRows[0]
-                            })
-                        }
+                        },
+                        getCheckboxProps: record => ({
+                            disabled: !(record.teachers || record.canSelect)
+                        }),
                     }}
                 />
+                {selectedScheme &&
                 <TimeTable
-                    rows={sectionsInMorning + sectionsInForenoon + sectionsInNoon + sectionsInAfternoon + sectionsInEvening + 1}
-                    columns={daysInWeek + 1}
-                    dividers={[sectionsInMorning, sectionsInMorning + sectionsInForenoon, sectionsInMorning + sectionsInForenoon + sectionsInNoon, sectionsInMorning + sectionsInForenoon + sectionsInNoon + sectionsInAfternoon]}
+                    rows={selectedScheme.sectionsInMorning + selectedScheme.sectionsInForenoon + selectedScheme.sectionsInNoon + selectedScheme.sectionsInAfternoon + selectedScheme.sectionsInEvening + 1}
+                    columns={selectedScheme.daysInWeek + 1}
+                    dividers={[selectedScheme.sectionsInMorning, selectedScheme.sectionsInMorning + selectedScheme.sectionsInForenoon, selectedScheme.sectionsInMorning + selectedScheme.sectionsInForenoon + selectedScheme.sectionsInNoon, selectedScheme.sectionsInMorning + selectedScheme.sectionsInForenoon + selectedScheme.sectionsInNoon + selectedScheme.sectionsInAfternoon]}
                     hoverableTableItem={(rowIndex, columnIndex) => {
                         if (rowIndex === 0 && columnIndex === 0) {
                             return true;
-                        } else if (rowIndex > 0 && columnIndex > 0) {
+                        }
+                        if (rowIndex > 0 && columnIndex > 0) {
                             return true;
                         }
                         return false;
@@ -85,19 +161,23 @@ export default class TeacherFixed extends React.PureComponent {
                             });
                         }
                         if (rowIndex > 0 && columnIndex > 0) {
-                            const {teacherSelected, flagFixedType, fixedMap} = this.state;
-                            if (teacherSelected === null) {
+                            const {teachersSelected, flagFixedType, fixedList} = this.state;
+                            if (teachersSelected.length === 0) {
                                 return;
                             }
-                            const fixedList = fixedMap.get(teacherSelected.rowId);
-                            if (fixedList == null) {
-                                return;
+                            const fixedMap = fixedList[flagFixedType - 1];
+                            let existList = fixedMap.get(`${rowIndex}_${columnIndex}`);
+                            if (existList == null) {
+                                existList = new Array();
                             }
-                            if (fixedList[flagFixedType - 1].has(`${rowIndex}_${columnIndex}`)) {
-                                fixedList[flagFixedType - 1].delete(`${rowIndex}_${columnIndex}`);
-                            } else {
-                                fixedList[flagFixedType - 1].add(`${rowIndex}_${columnIndex}`);
-                            }
+                            existList.push(...teachersSelected.filter(teacher => {
+                                if (existList.some(value => value.rowId === teacher.rowId)) {
+                                    return false;
+                                }
+                                return true;
+                            }));
+                            fixedMap.set(`${rowIndex}_${columnIndex}`, existList);
+                            fixedList[flagFixedType - 1] = fixedMap;
                             this.setState({
                                 refreshPage: !refreshPage,
                             });
@@ -121,42 +201,68 @@ export default class TeacherFixed extends React.PureComponent {
                                     break;
                             }
                         } else if (rowIndex > 0 && columnIndex === 0) {
-                            return getSectionName(rowIndex - 1, sectionsInMorning, sectionsInForenoon, sectionsInNoon, sectionsInAfternoon, sectionsInEvening);
+                            return getSectionName(rowIndex - 1, selectedScheme.sectionsInMorning, selectedScheme.sectionsInForenoon, selectedScheme.sectionsInNoon, selectedScheme.sectionsInAfternoon, selectedScheme.sectionsInEvening);
                         } else if (rowIndex > 0 && columnIndex > 0) {
-                            const {fixedMap, teacherSelected} = this.state;
-                            if (teacherSelected == null) {
-                                return null;
-                            }
-                            const fixedList = fixedMap.get(teacherSelected.rowId);
-                            if (fixedList != null) {
-                                if (fixedList[flagFixedType - 1].has(`${rowIndex}_${columnIndex}`)) {
-                                    switch (flagFixedType) {
-                                        case 1:
-                                            return <div
-                                                className={classNames(styles.fixedTypeContainer, styles.fixed)}>固排</div>;
-                                        case 2:
-                                            return <div
-                                                className={classNames(styles.fixedTypeContainer, styles.suggest)}>建议</div>;
-                                        case 3:
-                                            return <div
-                                                className={classNames(styles.fixedTypeContainer, styles.oppose)}>反对</div>;
-                                        case 4:
-                                            return <div
-                                                className={classNames(styles.fixedTypeContainer, styles.ban)}>禁止</div>;
-                                        default:
-                                            break;
-                                    }
+                            const {fixedList} = this.state;
+                            const fixed = fixedList[flagFixedType - 1].get(`${rowIndex}_${columnIndex}`);
+                            if (fixed != null && fixed.length > 0) {
+                                if (fixed.length === 1) {
+                                    const f = fixed[0];
+                                    return (
+                                        <Tag key={`tag_${rowIndex}_${columnIndex}_${f.rowId}`}
+                                             color={["green", 'lime', 'gold', 'red'][flagFixedType - 1]} closable
+                                             onClose={() => {
+                                                 const fixed = fixedList[flagFixedType - 1].get(`${rowIndex}_${columnIndex}`);
+                                                 if (fixed != null) {
+                                                     fixedList[flagFixedType - 1].set(`${rowIndex}_${columnIndex}`, fixed.filter(ff => ff.rowId !== f.rowId));
+                                                 }
+                                                 this.setState({
+                                                     refreshPage: !refreshPage
+                                                 });
+                                             }}>{f.name}</Tag>
+                                    )
+                                } else {
+                                    return (
+                                        <Tag key={`tag_${rowIndex}_${columnIndex}_0`}
+                                             color={["green", 'lime', 'gold', 'red'][flagFixedType - 1]}
+                                             onClick={() => {
+                                                 const $this = this;
+                                                 Modal.info({
+                                                     title: `${getWeekDayName(columnIndex - 1)}${getSectionName(rowIndex - 1, selectedScheme.sectionsInMorning, selectedScheme.sectionsInForenoon, selectedScheme.sectionsInNoon, selectedScheme.sectionsInAfternoon, selectedScheme.sectionsInEvening)}`,
+                                                     okText: "确定",
+                                                     content: (
+                                                         <Fragment>
+                                                             {
+                                                                 fixed.map(f => (
+                                                                     <Tag key={`modal_tag_${f.rowId}`}
+                                                                          color={["green", 'lime', 'gold', 'red'][flagFixedType - 1]}
+                                                                          closable
+                                                                          onClose={() => {
+                                                                              const {fixedList} = $this.state;
+                                                                              const fixed = fixedList[flagFixedType - 1].get(`${rowIndex}_${columnIndex}`);
+                                                                              if (fixed != null) {
+                                                                                  fixedList[flagFixedType - 1].set(`${rowIndex}_${columnIndex}`, fixed.filter(ff => ff.rowId !== f.rowId));
+                                                                              }
+                                                                              $this.setState({
+                                                                                  refreshPage: !$this.state.refreshPage,
+                                                                              });
+                                                                          }}>{f.name}</Tag>
+                                                                 ))
+                                                             }
+                                                         </Fragment>
+                                                     )
+                                                 })
+                                             }}>{`共${fixed.length}位教师`}</Tag>
+                                    )
                                 }
                             }
                         }
                     }}
-                />
-                <Button onClick={() => {
-                    console.log(this.state.teacherSelected);
-                    console.log(this.state.fixedMap)
-                }}>保存</Button>
+                />}
             </div>
         );
     }
 
 }
+
+export default connect(({scheme, rule, baseData}) => ({scheme, rule, baseData}))(TeacherFixed)

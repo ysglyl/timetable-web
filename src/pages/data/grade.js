@@ -1,27 +1,28 @@
 import React from 'react';
 import {connect} from 'dva';
-import {Button, Form, Input, InputNumber, Modal, Table} from "antd"
+import {Alert, Button, Input, Modal, Table, Transfer} from "antd"
 
-class Space extends React.PureComponent {
+const {TextArea} = Input;
+
+class Grade extends React.PureComponent {
 
     state = {
         selectedKeys: [],
-        modalAddVisible: false,
-        addModel: {},
-        refreshPage: false
+        modalVisibleAddGrade: false,
+        addGradeNames: [],
     };
 
     componentDidMount() {
         const {dispatch} = this.props;
         dispatch({
-            type: 'baseData/spaceAllList'
+            type: 'baseData/gradeAllList'
         })
     }
 
     render() {
         const {
             baseData: {
-                spaceAllList
+                gradeAllList
             }
         } = this.props;
         const {selectedKeys} = this.state;
@@ -31,11 +32,10 @@ class Space extends React.PureComponent {
                     size="small"
                     rowKey={'rowId'}
                     columns={[
-                        {title: '场地', dataIndex: 'name'},
-                        {title: '可容纳班级数', dataIndex: 'volume'}
+                        {title: '班级名称', dataIndex: 'name'}
                     ]}
                     pagination={false}
-                    dataSource={spaceAllList}
+                    dataSource={gradeAllList}
                     bordered
                     rowSelection={{
                         onChange: (selectedKeys) => {
@@ -48,21 +48,21 @@ class Space extends React.PureComponent {
                         <div>
                             <Button onClick={() => {
                                 this.setState({
-                                    modalAddVisible: true
+                                    modalVisibleAddGrade: true
                                 })
-                            }}>新增</Button>
+                            }}>批量新增</Button>
                             {selectedKeys.length > 0 &&
                             <Button type={'danger'} style={{marginLeft: 8}} onClick={() => {
                                 const {dispatch} = this.props;
                                 dispatch({
-                                    type: 'baseData/spaceDeleteBatch',
+                                    type: 'baseData/gradeDeleteBatch',
                                     payload: selectedKeys,
                                     callback: () => {
                                         this.setState({
                                             selectedKeys: []
                                         });
                                         dispatch({
-                                            type: 'baseData/spaceAllList'
+                                            type: 'baseData/gradeAllList'
                                         })
                                     }
                                 })
@@ -71,55 +71,42 @@ class Space extends React.PureComponent {
                     )}
                 />
                 <Modal
-                    visible={this.state.modalAddVisible}
-                    title={'新增场地'}
+                    visible={this.state.modalVisibleAddGrade}
+                    title={'批量新增年级'}
                     cancelText={"取消"}
                     onCancel={() => {
                         this.setState({
-                            modalAddVisible: false
+                            modalVisibleAddGrade: false
                         })
                     }}
                     okText={"确定"}
                     okButtonProps={{
-                        disabled: !(this.state.addModel.name && this.state.addModel.volume)
+                        disabled: this.state.addGradeNames.length === 0
                     }}
                     onOk={() => {
-                        const {addModel} = this.state;
+                        const {addGradeNames} = this.state;
                         const {dispatch} = this.props;
                         dispatch({
-                            type: "baseData/spaceSave",
-                            payload: addModel,
+                            type: "baseData/gradeSaveBatch",
+                            payload: addGradeNames.map(name => ({
+                                name
+                            })),
                             callback: () => {
                                 this.setState({
-                                    modalAddVisible: false,
-                                    addModel: {volume: 1}
+                                    modalVisibleAddGrade: false
                                 })
                                 dispatch({
-                                    type: 'baseData/spaceAllList'
+                                    type: 'baseData/gradeAllList'
                                 })
                             }
                         });
                     }}>
-                    <Form labelCol={{span: 8}} wrapperCol={{span: 16}}>
-                        <Form.Item label={"场地名称"}>
-                            <Input placeholder={"请输入场地名称"} value={this.state.addModel.name} onChange={(e) => {
-                                const {refreshPage, addModel} = this.state;
-                                addModel.name = e.target.value;
-                                this.setState({
-                                    refreshPage: !refreshPage
-                                })
-                            }} />
-                        </Form.Item>
-                        <Form.Item label={"可容纳班数"}>
-                            <InputNumber placeholder={'请选择班'} min={1} value={this.state.addModel.volume} onChange={val => {
-                                const {refreshPage, addModel} = this.state;
-                                addModel.volume = val;
-                                this.setState({
-                                    refreshPage: !refreshPage
-                                })
-                            }} />
-                        </Form.Item>
-                    </Form>
+                    <TextArea rows={10} onChange={(e) => {
+                        this.setState({
+                            addGradeNames: e.target.value.split("\n").map(i => i.trim()).filter(i => i)
+                        })
+                    }} />
+                    <Alert style={{marginTop: 5}} message={'每年级独占一行'} type="info" />
                 </Modal>
             </div>
         );
@@ -127,4 +114,4 @@ class Space extends React.PureComponent {
 
 }
 
-export default connect(({baseData}) => ({baseData}))(Space);
+export default connect(({baseData}) => ({baseData}))(Grade);

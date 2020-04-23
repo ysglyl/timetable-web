@@ -6,7 +6,7 @@ import post from '@/utils/post'
  * @returns {Promise<any|never>}
  */
 export async function httpAllList(params) {
-    return post('/timetable/subject/allList', params);
+    return post('/timetable/scheme/setting/allList', params);
 }
 
 /**
@@ -15,7 +15,16 @@ export async function httpAllList(params) {
  * @returns {Promise<any|never>}
  */
 export async function httpSaveBatch(params) {
-    return post('/timetable/subject/saveBatch', params, true);
+    return post('/timetable/scheme/setting/saveBatch', params, true);
+}
+
+/**
+ * 保存
+ * @param params
+ * @returns {Promise<any|never>}
+ */
+export async function httpSave(params) {
+    return post('/timetable/scheme/setting/save', params, true);
 }
 
 /**
@@ -24,5 +33,5 @@ export async function httpSaveBatch(params) {
  * @returns {Promise<any|never>}
  */
 export async function httpDeleteBatch(params) {
-    return post('/timetable/subject/deleteBatch', params, true);
+    return post('/timetable/scheme/setting/deleteBatch', params, true);
 }

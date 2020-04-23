@@ -1,5 +1,5 @@
 import {stringify} from 'qs';
-import {fetch} from 'dva';
+import fetch from 'dva/fetch';
 
 
 /**
@@ -29,7 +29,7 @@ export default function post(url, params, flag) {
     };
     newOptions.body = stringify(newOptions.body);
   }
-  return fetch(url, newOptions)
+  return fetch(url,newOptions)
     .then(response => {
       if (response.status >= 200 && response.status < 300) {
         return response;

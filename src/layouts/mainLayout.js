@@ -8,7 +8,7 @@ const {Sider, Content} = Layout;
 const {SubMenu} = Menu;
 export default class MainLayout extends React.PureComponent {
 
-  rootSubmenuKeys = ['data', 'setting', 'rule', 'schedule'];
+  rootSubmenuKeys = ['data', 'scheme', 'rule', 'schedule'];
 
   state = {
     openKeys: [''],
@@ -71,6 +71,9 @@ export default class MainLayout extends React.PureComponent {
               <Menu.Item key="/data/teacher">
                 <Link to={"/data/teacher"}>教师信息</Link>
               </Menu.Item>
+              <Menu.Item key="/data/grade">
+                <Link to={"/data/grade"}>年级信息</Link>
+              </Menu.Item>
               <Menu.Item key="/data/class">
                 <Link to={"/data/class"}>班级信息</Link>
               </Menu.Item>
@@ -120,11 +123,11 @@ export default class MainLayout extends React.PureComponent {
               <Menu.Item key="/rule/spaceFixed">
                 <Link to={"/rule/spaceFixed"}>场地固排禁排</Link>
               </Menu.Item>
-              <Menu.Item key="/rule/teacher">
-                <Link to={"/rule/teacher"}>教师特殊要求</Link>
+              <Menu.Item key="/rule/teacherSpecial">
+                <Link to={"/rule/teacherSpecial"}>教师特殊要求</Link>
               </Menu.Item>
-              <Menu.Item key="/rule/subject">
-                <Link to={"/rule/subject"}>科目特殊要求</Link>
+              <Menu.Item key="/rule/subjectSpecial">
+                <Link to={"/rule/subjectSpecial"}>科目特殊要求</Link>
               </Menu.Item>
             </SubMenu>
             <SubMenu

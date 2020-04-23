@@ -6,16 +6,16 @@ import post from '@/utils/post'
  * @returns {Promise<any|never>}
  */
 export async function httpAllList(params) {
-    return post('/timetable/subject/allList', params);
+    return post('/timetable/subject/special/allList', params);
 }
 
 /**
- * 批量保存
+ * 保存
  * @param params
  * @returns {Promise<any|never>}
  */
 export async function httpSaveBatch(params) {
-    return post('/timetable/subject/saveBatch', params, true);
+    return post('/timetable/subject/special/saveBatch', params, true);
 }
 
 /**
@@ -24,5 +24,5 @@ export async function httpSaveBatch(params) {
  * @returns {Promise<any|never>}
  */
 export async function httpDeleteBatch(params) {
-    return post('/timetable/subject/deleteBatch', params, true);
+    return post('/timetable/subject/special/deleteBatch', params, true);
 }
