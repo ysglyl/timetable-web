@@ -3,10 +3,6 @@ import {
     httpSaveBatch as httpSectionDisabledSaveBatch
 } from "@/services/rule/section_disabled";
 import {
-    httpAllList as httpSectionContinuousAllList,
-    httpSaveBatch as httpSectionContinuousSaveBatch
-} from "@/services/rule/section_continuous";
-import {
     httpAllList as httpClassFixedAllList,
     httpSaveBatch as httpClassFixedSaveBatch
 } from "@/services/rule/class_fixed";
@@ -22,29 +18,11 @@ import {
     httpAllList as httpSpaceFixedAllList,
     httpSaveBatch as httpSpaceFixedSaveBatch
 } from "@/services/rule/space_fixed";
-import {
-    httpAllList as httpTeacherSpecialAllList,
-    httpDeleteBatch as httpTeacherSpecialDeleteBatch,
-    httpSaveBatch as httpTeacherSpecialSaveBatch
-} from "@/services/rule/teacher_special";
-import {
-    httpAllList as httpSubjectSpecialAllList,
-    httpDeleteBatch as httpSubjectSpecialDeleteBatch,
-    httpSaveBatch as httpSubjectSpecialSaveBatch
-} from "@/services/rule/subject_special";
 
 export default {
     namespace: 'rule',
 
-    state: {
-        sectionDisabledAllList: [],
-        sectionContinuousAllList: [],
-        classFixedAllList: [],
-        teacherFixedAllList: [],
-        subjectFixedAllList: [],
-        teacherSpecialAllList:[],
-        subjectSpecialAllList:[]
-    },
+    state: {},
 
     effects: {
         * sectionDisabledAllList({payload, callback}, {call}) {
@@ -55,18 +33,6 @@ export default {
         },
         * sectionDisabledSaveBatch({payload, callback}, {call}) {
             const res = yield call(httpSectionDisabledSaveBatch, payload);
-            if (callback && typeof callback === 'function') {
-                callback(res)
-            }
-        },
-        * sectionContinuousAllList({payload, callback}, {call}) {
-            const res = yield call(httpSectionContinuousAllList, payload)
-            if (callback && typeof callback === 'function') {
-                callback(res)
-            }
-        },
-        * sectionContinuousSaveBatch({payload, callback}, {call}) {
-            const res = yield call(httpSectionContinuousSaveBatch, payload);
             if (callback && typeof callback === 'function') {
                 callback(res)
             }
@@ -118,59 +84,8 @@ export default {
             if (callback && typeof callback === 'function') {
                 callback(res)
             }
-        },
-        * teacherSpecialAllList({payload}, {put, call}) {
-            const res = yield call(httpTeacherSpecialAllList, payload)
-            yield put({
-                type: 'teacherSpecialAllListSuccess',
-                payload: res.data
-            })
-        },
-        * teacherSpecialSaveBatch({payload, callback}, {call}) {
-            const res = yield call(httpTeacherSpecialSaveBatch, payload);
-            if (callback && typeof callback === 'function') {
-                callback(res)
-            }
-        },
-        * teacherSpecialDeleteBatch({payload, callback}, {call}) {
-            const res = yield call(httpTeacherSpecialDeleteBatch, payload);
-            if (callback && typeof callback === 'function') {
-                callback(res)
-            }
-        },
-        * subjectSpecialAllList({payload}, {put, call}) {
-            const res = yield call(httpSubjectSpecialAllList, payload)
-            yield put({
-                type: 'subjectSpecialAllListSuccess',
-                payload: res.data
-            })
-        },
-        * subjectSpecialSaveBatch({payload, callback}, {call}) {
-            const res = yield call(httpSubjectSpecialSaveBatch, payload);
-            if (callback && typeof callback === 'function') {
-                callback(res)
-            }
-        },
-        * subjectSpecialDeleteBatch({payload, callback}, {call}) {
-            const res = yield call(httpSubjectSpecialDeleteBatch, payload);
-            if (callback && typeof callback === 'function') {
-                callback(res)
-            }
-        },
+        }
     },
 
-    reducers: {
-        teacherSpecialAllListSuccess(state, {payload}) {
-            return {
-                ...state,
-                teacherSpecialAllList: payload
-            }
-        },
-        subjectSpecialAllListSuccess(state, {payload}) {
-            return {
-                ...state,
-                subjectSpecialAllList: payload
-            }
-        },
-    }
+    reducers: {}
 }

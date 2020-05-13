@@ -1,6 +1,6 @@
 import React, {Fragment} from 'react';
 import {connect} from "dva";
-import {Button, Card, Select} from "antd";
+import {Button, Card, message, Select} from "antd";
 import {CheckOutlined, CloseOutlined} from '@ant-design/icons';
 import TimeTable from "@/components/timetable";
 import {getSectionName} from "@/utils/tool";
@@ -33,7 +33,7 @@ class Section extends React.PureComponent {
                             const {dispatch} = this.props;
                             dispatch({
                                 type: "rule/sectionDisabledAllList",
-                                schemeId: value,
+                                payload: {schemeId: value},
                                 callback: res => {
                                     if (res.code === 200) {
                                         this.setState({
@@ -64,6 +64,13 @@ class Section extends React.PureComponent {
                                                 sectionIndex: dd[0] - 1
                                             })
                                         })
+                                    },
+                                    callback: res => {
+                                        if (res.code === 200) {
+                                            message.success("保存成功");
+                                        } else {
+                                            message.error("保存失败");
+                                        }
                                     }
                                 })
                             }}>保存</Button>

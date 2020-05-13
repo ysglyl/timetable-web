@@ -84,8 +84,8 @@ class SubjectFixed extends React.PureComponent {
                                         v.forEach(subject => {
                                             saveList.push({
                                                 schemeId: selectedScheme.rowId,
-                                                dayIndex: indexes[1],
-                                                sectionIndex: indexes[0],
+                                                dayIndex: indexes[1] - 1,
+                                                sectionIndex: indexes[0] - 1,
                                                 subjectId: subject.rowId,
                                                 fixedType: index + 1
                                             })
@@ -157,7 +157,7 @@ class SubjectFixed extends React.PureComponent {
                     clickTableItem={(rowIndex, columnIndex) => {
                         if (rowIndex === 0 && columnIndex === 0) {
                             this.setState({
-                                flagFixedType: flagFixedType % 4 + 1
+                                flagFixedType: flagFixedType % 2 + 1
                             });
                         }
                         if (rowIndex > 0 && columnIndex > 0) {
@@ -190,12 +190,6 @@ class SubjectFixed extends React.PureComponent {
                                     return <div
                                         className={classNames(styles.fixedTypeContainer, styles.fixed)}>固排</div>;
                                 case 2:
-                                    return <div
-                                        className={classNames(styles.fixedTypeContainer, styles.suggest)}>建议</div>;
-                                case 3:
-                                    return <div
-                                        className={classNames(styles.fixedTypeContainer, styles.oppose)}>反对</div>;
-                                case 4:
                                     return <div className={classNames(styles.fixedTypeContainer, styles.ban)}>禁止</div>;
                                 default:
                                     break;

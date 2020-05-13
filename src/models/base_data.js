@@ -11,17 +11,20 @@ import {
 import {
     httpAllList as httpClassAllList,
     httpDeleteBatch as httpClassDeleteBatch,
-    httpSaveBatch as httpClassSaveBatch
+    httpSaveBatch as httpClassSaveBatch,
+    httpTeacherSaveBatch as httpClassTeacherSaveBatch
 } from "@/services/base_data/class";
 import {
     httpAllList as httpGradeAllList,
     httpDeleteBatch as httpGradeDeleteBatch,
-    httpSaveBatch as httpGradeSaveBatch
+    httpSaveBatch as httpGradeSaveBatch,
+    httpSubjectSaveBatch as httpGradeSubjectSaveBatch
 } from "@/services/base_data/grade";
 import {
     httpAllList as httpSpaceAllList,
     httpDeleteBatch as httpSpaceDeleteBatch,
-    httpSave as httpSpaceSave
+    httpSave as httpSpaceSave,
+    httpSaveParticular as httpSpaceSaveParticular
 } from "@/services/base_data/space";
 import {
     httpAllList as httpTeacherGroupAllList,
@@ -137,6 +140,12 @@ export default {
                 callback(res)
             }
         },
+        * gradeSubjectSaveBatch({payload, callback}, {call}) {
+            const res = yield call(httpGradeSubjectSaveBatch, payload);
+            if (callback && typeof callback === 'function') {
+                callback(res)
+            }
+        },
         * gradeDeleteBatch({payload, callback}, {call}) {
             const res = yield call(httpGradeDeleteBatch, payload);
             if (callback && typeof callback === 'function') {
@@ -156,6 +165,12 @@ export default {
                 callback(res)
             }
         },
+        * classTeacherSaveBatch({payload, callback}, {call}) {
+            const res = yield call(httpClassTeacherSaveBatch, payload);
+            if (callback && typeof callback === 'function') {
+                callback(res)
+            }
+        },
         * classDeleteBatch({payload, callback}, {call}) {
             const res = yield call(httpClassDeleteBatch, payload);
             if (callback && typeof callback === 'function') {
@@ -171,6 +186,12 @@ export default {
         },
         * spaceSave({payload, callback}, {call}) {
             const res = yield call(httpSpaceSave, payload);
+            if (callback && typeof callback === 'function') {
+                callback(res)
+            }
+        },
+        * spaceSaveParticular({payload, callback}, {call}) {
+            const res = yield call(httpSpaceSaveParticular, payload);
             if (callback && typeof callback === 'function') {
                 callback(res)
             }

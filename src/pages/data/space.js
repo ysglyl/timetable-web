@@ -32,7 +32,10 @@ class Space extends React.PureComponent {
                     rowKey={'rowId'}
                     columns={[
                         {title: '场地', dataIndex: 'name'},
-                        {title: '可容纳班级数', dataIndex: 'volume'}
+                        {title: '可容纳班级数', dataIndex: 'volume'},
+                        {
+                            title: '是否独占', dataIndex: "classId", render:(value) => value != null ? "是" : "否"
+                        },
                     ]}
                     pagination={false}
                     dataSource={spaceAllList}
@@ -51,6 +54,17 @@ class Space extends React.PureComponent {
                                     modalAddVisible: true
                                 })
                             }}>新增</Button>
+                            <Button style={{marginLeft: 8}} onClick={() => {
+                                const {dispatch} = this.props;
+                                dispatch({
+                                    type: 'baseData/spaceSaveParticular',
+                                    callback: () => {
+                                        dispatch({
+                                            type: 'baseData/spaceAllList'
+                                        })
+                                    }
+                                })
+                            }}>刷新独占教室</Button>
                             {selectedKeys.length > 0 &&
                             <Button type={'danger'} style={{marginLeft: 8}} onClick={() => {
                                 const {dispatch} = this.props;
@@ -111,13 +125,14 @@ class Space extends React.PureComponent {
                             }} />
                         </Form.Item>
                         <Form.Item label={"可容纳班数"}>
-                            <InputNumber placeholder={'请选择班'} min={1} value={this.state.addModel.volume} onChange={val => {
-                                const {refreshPage, addModel} = this.state;
-                                addModel.volume = val;
-                                this.setState({
-                                    refreshPage: !refreshPage
-                                })
-                            }} />
+                            <InputNumber placeholder={'请选择班'} min={1} value={this.state.addModel.volume}
+                                         onChange={val => {
+                                             const {refreshPage, addModel} = this.state;
+                                             addModel.volume = val;
+                                             this.setState({
+                                                 refreshPage: !refreshPage
+                                             })
+                                         }} />
                         </Form.Item>
                     </Form>
                 </Modal>

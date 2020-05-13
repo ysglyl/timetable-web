@@ -35,3 +35,12 @@ export async function httpDeleteBatch(params) {
 export async function httpSchedule(params) {
     return post('/timetable/scheme/schedule', params, true);
 }
+
+/**
+ * 方案班级保存
+ * @param params
+ * @returns {Promise<any|never>}
+ */
+export async function httpClassSave(params) {
+    return post('/timetable/scheme/class/save', params, true);
+}

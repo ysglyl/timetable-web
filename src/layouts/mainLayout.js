@@ -1,7 +1,7 @@
 import React from 'react';
 import {Layout, Menu} from 'antd';
 import {Link} from 'umi';
-import {BulbOutlined, CarryOutOutlined, DatabaseOutlined} from '@ant-design/icons';
+import {BulbOutlined, CarryOutOutlined, DatabaseOutlined,ToolOutlined} from '@ant-design/icons';
 import styles from './mainLayout.less';
 
 const {Sider, Content} = Layout;
@@ -101,33 +101,24 @@ export default class MainLayout extends React.PureComponent {
               key="rule"
               title={
                 <span>
-                  <CarryOutOutlined />
+                  <ToolOutlined />
                   <span>排课规则</span>
                 </span>
               }>
               <Menu.Item key="/rule/section">
                 <Link to={"/rule/section"}>课节设置</Link>
               </Menu.Item>
-              <Menu.Item key="/rule/continuous">
-                <Link to={"/rule/continuous"}>连堂课设置</Link>
-              </Menu.Item>
               <Menu.Item key="/rule/classFixed">
                 <Link to={"/rule/classFixed"}>班级固排禁排</Link>
-              </Menu.Item>
-              <Menu.Item key="/rule/teacherFixed">
-                <Link to={"/rule/teacherFixed"}>教师固排禁排</Link>
               </Menu.Item>
               <Menu.Item key="/rule/subjectFixed">
                 <Link to={"/rule/subjectFixed"}>科目固排禁排</Link>
               </Menu.Item>
+              <Menu.Item key="/rule/teacherFixed">
+                <Link to={"/rule/teacherFixed"}>教师禁排</Link>
+              </Menu.Item>
               <Menu.Item key="/rule/spaceFixed">
-                <Link to={"/rule/spaceFixed"}>场地固排禁排</Link>
-              </Menu.Item>
-              <Menu.Item key="/rule/teacherSpecial">
-                <Link to={"/rule/teacherSpecial"}>教师特殊要求</Link>
-              </Menu.Item>
-              <Menu.Item key="/rule/subjectSpecial">
-                <Link to={"/rule/subjectSpecial"}>科目特殊要求</Link>
+                <Link to={"/rule/spaceFixed"}>场地禁排</Link>
               </Menu.Item>
             </SubMenu>
             <SubMenu

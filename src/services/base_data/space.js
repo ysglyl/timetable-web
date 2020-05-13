@@ -26,3 +26,12 @@ export async function httpSave(params) {
 export async function httpDeleteBatch(params) {
     return post('/timetable/space/deleteBatch', params, true);
 }
+
+/**
+ * 生成班级独占的教室
+ * @param params
+ * @returns {Promise<any|never>}
+ */
+export async function httpSaveParticular(params) {
+    return post('/timetable/space/saveParticular', params, true);
+}

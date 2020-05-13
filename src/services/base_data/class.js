@@ -19,6 +19,15 @@ export async function httpSaveBatch(params) {
 }
 
 /**
+ * 保存授课教师
+ * @param params
+ * @returns {Promise<any|never>}
+ */
+export async function httpTeacherSaveBatch(params) {
+    return post('/timetable/class/teacher/saveBatch', params, true);
+}
+
+/**
  * 批量删除
  * @param params
  * @returns {Promise<any|never>}

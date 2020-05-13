@@ -1,5 +1,6 @@
 import {
     httpAllList as httpSchemeAllList,
+    httpClassSave as httpSchemeClassSave,
     httpDeleteBatch as httpSchemeDeleteBatch,
     httpSave as httpSchemeSave,
     httpSchedule as httpSchemeSchedule
@@ -8,9 +9,7 @@ import {
     httpAllList as httpSettingAllList,
     httpDeleteBatch as httpSettingDeleteBatch,
     httpSave as httpSettingSave,
-    httpSaveBatch as httpSettingSaveBatch
 } from "@/services/scheme/setting";
-
 
 export default {
     namespace: 'scheme',
@@ -40,6 +39,12 @@ export default {
                 callback(res)
             }
         },
+        * schemeClassSave({payload, callback}, {call}) {
+            const res = yield call(httpSchemeClassSave, payload);
+            if (callback && typeof callback === 'function') {
+                callback(res)
+            }
+        },
         * schemeSchedule({payload, callback}, {call}) {
             const res = yield call(httpSchemeSchedule, payload);
             if (callback && typeof callback === 'function') {
@@ -52,12 +57,6 @@ export default {
                 type: 'settingAllListSuccess',
                 payload: res.data
             })
-        },
-        * settingSaveBatch({payload, callback}, {call}) {
-            const res = yield call(httpSettingSaveBatch, payload);
-            if (callback && typeof callback === 'function') {
-                callback(res)
-            }
         },
         * settingSave({payload, callback}, {call}) {
             const res = yield call(httpSettingSave, payload);

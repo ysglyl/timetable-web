@@ -15,7 +15,7 @@ class TeacherFixed extends React.PureComponent {
         selectedScheme: null,
         teachersSelected: [],
         fixedList: [new Map(), new Map(), new Map(), new Map()],
-        flagFixedType: 1,
+        flagFixedType: 2,
         refreshPage: false
     }
 
@@ -84,8 +84,8 @@ class TeacherFixed extends React.PureComponent {
                                         v.forEach(teacher => {
                                             saveList.push({
                                                 schemeId: selectedScheme.rowId,
-                                                dayIndex: indexes[1],
-                                                sectionIndex: indexes[0],
+                                                dayIndex: indexes[1] - 1,
+                                                sectionIndex: indexes[0] - 1,
                                                 teacherId: teacher.rowId,
                                                 fixedType: index + 1
                                             })
@@ -155,11 +155,6 @@ class TeacherFixed extends React.PureComponent {
                         return false;
                     }}
                     clickTableItem={(rowIndex, columnIndex) => {
-                        if (rowIndex === 0 && columnIndex === 0) {
-                            this.setState({
-                                flagFixedType: flagFixedType % 4 + 1
-                            });
-                        }
                         if (rowIndex > 0 && columnIndex > 0) {
                             const {teachersSelected, flagFixedType, fixedList} = this.state;
                             if (teachersSelected.length === 0) {
@@ -185,21 +180,7 @@ class TeacherFixed extends React.PureComponent {
                     }}
                     renderTableItem={(rowIndex, columnIndex) => {
                         if (rowIndex === 0 && columnIndex === 0) {
-                            switch (flagFixedType) {
-                                case 1:
-                                    return <div
-                                        className={classNames(styles.fixedTypeContainer, styles.fixed)}>固排</div>;
-                                case 2:
-                                    return <div
-                                        className={classNames(styles.fixedTypeContainer, styles.suggest)}>建议</div>;
-                                case 3:
-                                    return <div
-                                        className={classNames(styles.fixedTypeContainer, styles.oppose)}>反对</div>;
-                                case 4:
-                                    return <div className={classNames(styles.fixedTypeContainer, styles.ban)}>禁止</div>;
-                                default:
-                                    break;
-                            }
+                            return <div className={classNames(styles.fixedTypeContainer, styles.ban)}>禁止</div>;
                         } else if (rowIndex > 0 && columnIndex === 0) {
                             return getSectionName(rowIndex - 1, selectedScheme.sectionsInMorning, selectedScheme.sectionsInForenoon, selectedScheme.sectionsInNoon, selectedScheme.sectionsInAfternoon, selectedScheme.sectionsInEvening);
                         } else if (rowIndex > 0 && columnIndex > 0) {

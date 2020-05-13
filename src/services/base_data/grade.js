@@ -19,6 +19,15 @@ export async function httpSaveBatch(params) {
 }
 
 /**
+ * 批量保存年级课务
+ * @param params
+ * @returns {Promise<any|never>}
+ */
+export async function httpSubjectSaveBatch(params) {
+    return post('/timetable/grade/subject/saveBatch', params, true);
+}
+
+/**
  * 批量删除
  * @param params
  * @returns {Promise<any|never>}

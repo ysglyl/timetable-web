@@ -1,7 +1,7 @@
-import React from 'react';
+import React, {Fragment} from 'react';
 import {connect} from 'dva';
 
-import {Button, Form, Input, InputNumber, Modal, Table} from 'antd';
+import {Button, Form, Input, InputNumber, Modal, Select, Table} from 'antd';
 
 import styles from './scheme.less'
 
@@ -10,7 +10,8 @@ class Scheme extends React.PureComponent {
     state = {
         selectedKeys: [],
         addModalVisible: false,
-        addForm: null
+        addForm: null,
+        editRowId: null
     }
 
     componentDidMount() {
@@ -18,10 +19,16 @@ class Scheme extends React.PureComponent {
         dispatch({
             type: 'scheme/schemeAllList'
         })
+        dispatch({
+            type: 'baseData/gradeAllList'
+        });
+        dispatch({
+            type: 'baseData/classAllList'
+        });
     }
 
     render() {
-        const {scheme: {schemeAllList}} = this.props;
+        const {scheme: {schemeAllList}, baseData: {gradeAllList, classAllList}} = this.props;
         const {selectedKeys} = this.state;
         return (
             <div>
@@ -64,6 +71,22 @@ class Scheme extends React.PureComponent {
                                 {title: '下午', dataIndex: 'sectionsInAfternoon'},
                                 {title: '晚自习', dataIndex: 'sectionsInEvening'},
                             ]
+                        },
+                        {
+                            title: "操作", render: (value, record) => (
+                                <Fragment>
+                                    <Button type={'link'} onClick={() => {
+                                        this.state.addForm.setFieldsValue({
+                                            ...record,
+                                            classIds: record.classes.map(c => c.rowId)
+                                        });
+                                        this.setState({
+                                            addModalVisible: true,
+                                            editRowId: record.rowId
+                                        });
+                                    }}>修改</Button>
+                                </Fragment>
+                            )
                         }
                     ]}
                     dataSource={schemeAllList}
@@ -76,6 +99,8 @@ class Scheme extends React.PureComponent {
                     }}
                 />
                 <Modal
+                    forceRender
+                    centered
                     visible={this.state.addModalVisible}
                     title="基本信息"
                     cancelText={"取消"}
@@ -90,7 +115,12 @@ class Scheme extends React.PureComponent {
                             const {dispatch} = this.props;
                             dispatch({
                                 type: "scheme/schemeSave",
-                                payload: values,
+                                payload: {
+                                    ...values,
+                                    rowId: this.state.editRowId,
+                                    classes: values.classIds.map(id => ({rowId: id})),
+                                    classIds: null
+                                },
                                 callback: res => {
                                     if (res.code === 200) {
                                         this.setState({
@@ -157,6 +187,18 @@ class Scheme extends React.PureComponent {
                             </Form.Item>
                             <span className={styles.suffix}>节</span>
                         </Form.Item>
+                        <Form.Item label={'班级'} name={"classIds"}>
+                            <Select placeholder={"请选择班级"} mode={'multiple'}>
+                                {gradeAllList.map(grade => (
+                                    <Select.OptGroup key={`select_group_${grade.rowId}`} label={grade.name}>
+                                        {classAllList.filter(c => c.gradeId === grade.rowId).map(c => (
+                                            <Select.Option key={`select_option_${c.rowId}`}
+                                                           value={c.rowId}>{c.name}</Select.Option>
+                                        ))}
+                                    </Select.OptGroup>
+                                ))}
+                            </Select>
+                        </Form.Item>
                     </Form>
                 </Modal>
             </div>
@@ -165,4 +207,4 @@ class Scheme extends React.PureComponent {
 
 }
 
-export default connect(({scheme}) => ({scheme}))(Scheme)
+export default connect(({scheme, baseData}) => ({scheme, baseData}))(Scheme)

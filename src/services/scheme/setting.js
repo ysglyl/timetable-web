@@ -10,15 +10,6 @@ export async function httpAllList(params) {
 }
 
 /**
- * 批量保存
- * @param params
- * @returns {Promise<any|never>}
- */
-export async function httpSaveBatch(params) {
-    return post('/timetable/scheme/setting/saveBatch', params, true);
-}
-
-/**
  * 保存
  * @param params
  * @returns {Promise<any|never>}
